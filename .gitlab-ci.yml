@@ -1,0 +1,46 @@
+cache:
+    paths:
+        - node_modules/
+
+stages:
+    - init
+    - deployHeroku
+    - deployElasticBeanstalk
+
+# before_script:
+#   - export APPLICATION=sample-cms
+#   - export ENVIRONMENT=sample-cms-dev
+#   - export BUCKET=s3://elasticbeanstalk_sample_address
+#   - export BUCKET_FOLDER=sample-cms
+#   - export VERSION_LABEL=sample-cms-$CI_PIPELINE_ID
+#   - export FILENAME=app-$CI_PIPELINE_ID-$(date +%d%m%y)_$(date +%H%M%S).zip
+
+init:
+    stage: init
+    image: node:latest
+    script:
+        - npm install
+
+deployHeroku:
+    image: node:latest
+    stage: deployHeroku
+    script:
+        - git push https://heroku:$HEROKU_API_KEY@git.heroku.com/sample-cms.git HEAD:master
+        - echo "Deployed to production server"
+    environment:
+        name: production
+        url: https://sample-cms.herokuapp.com/
+    only:
+        - master
+
+# deployElasticBeanstalk:
+#     image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+#     stage: deployElasticBeanstalk
+#     script:
+#         - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+#         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+#         - aws configure set region sa-east-1
+#         - zip -r $FILENAME .
+#         - aws s3 cp $FILENAME $BUCKET/$BUCKET_FOLDER
+#         - aws elasticbeanstalk create-application-version --application-name $APPLICATION --version-label $VERSION_LABEL --source-bundle S3Bucket=$BUCKET,S3Key=$BUCKET_FOLDER/$FILENAME
+#         - aws elasticbeanstalk update-environment --application-name $APPLICATION --environment-name $ENVIRONMENT --version-label $VERSION_LABEL
